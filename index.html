@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baker's Cost Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f9ff;
+        }
+        .ingredient-card {
+            transition: all 0.3s ease;
+        }
+        .ingredient-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4 md:p-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-semibold text-center mb-8 text-sky-800">Baker's Cost Calculator</h1>
+            
+            <!-- Ingredient Management Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-medium mb-4 text-sky-700">Manage Ingredients</h2>
+                <form id="ingredientForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="ingredientName" placeholder="Ingredient Name" class="p-2 border rounded" required>
+                        <input type="number" id="ingredientQuantity" placeholder="Quantity (g/ml)" class="p-2 border rounded" required>
+                        <input type="number" id="ingredientPrice" placeholder="Price (₹)" class="p-2 border rounded" required>
+                    </div>
+                    <button type="submit" class="w-full bg-sky-600 text-white py-2 rounded hover:bg-sky-700 transition">Add Ingredient</button>
+                </form>
+            </div>
+
+            <!-- Ingredients List -->
+            <div id="ingredientsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"></div>
+
+            <!-- Recipe Calculator -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-medium mb-4 text-sky-700">Calculate Recipe Cost</h2>
+                <div id="recipeCalculator" class="space-y-4">
+                    <div id="recipeIngredients" class="space-y-2"></div>
+                    <button id="addRecipeIngredient" class="w-full bg-sky-100 text-sky-700 py-2 rounded hover:bg-sky-200 transition">
+                        <i class="bi bi-plus-circle"></i> Add Ingredient to Recipe
+                    </button>
+                    <div class="text-right">
+                        <p class="text-lg font-medium">Total Cost: ₹<span id="totalCost">0.00</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ingredients = [];
+
+        document.getElementById('ingredientForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('ingredientName').value;
+            const quantity = parseFloat(document.getElementById('ingredientQuantity').value);
+            const price = parseFloat(document.getElementById('ingredientPrice').value);
+
+            ingredients.push({
+                name,
+                quantity,
+                price,
+                pricePerUnit: price / quantity
+            });
+
+            updateIngredientsList();
+            e.target.reset();
+        });
+
+        function updateIngredientsList() {
+            const list = document.getElementById('ingredientsList');
+            list.innerHTML = ingredients.map((ing, index) => `
+                <div class="ingredient-card bg-white p-4 rounded-lg shadow">
+                    <h3 class="font-medium text-sky-800">${ing.name}</h3>
+                    <p class="text-gray-600">Quantity: ${ing.quantity}g/ml</p>
+                    <p class="text-gray-600">Price: ₹${ing.price}</p>
+                    <p class="text-gray-600">Price per unit: ₹${ing.pricePerUnit.toFixed(2)}</p>
+                    <button onclick="deleteIngredient(${index})" class="text-red-500 hover:text-red-700">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            `).join('');
+            updateRecipeCalculator();
+        }
+
+        function deleteIngredient(index) {
+            ingredients.splice(index, 1);
+            updateIngredientsList();
+        }
+
+        document.getElementById('addRecipeIngredient').addEventListener('click', () => {
+            const recipeIngredients = document.getElementById('recipeIngredients');
+            const div = document.createElement('div');
+            div.className = 'flex gap-4 items-center';
+            div.innerHTML = `
+                <select class="recipe-ingredient flex-1 p-2 border rounded" required>
+                    <option value="">Select Ingredient</option>
+                    ${ingredients.map(ing => `<option value="${ing.name}">${ing.name}</option>`).join('')}
+                </select>
+                <input type="number" class="recipe-quantity w-24 p-2 border rounded" placeholder="Quantity" required>
+                <button onclick="this.parentElement.remove(); calculateTotal()" class="text-red-500 hover:text-red-700">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            `;
+            recipeIngredients.appendChild(div);
+        });
+
+        function updateRecipeCalculator() {
+            const recipeIngredients = document.getElementById('recipeIngredients');
+            recipeIngredients.innerHTML = '';
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const recipeIngredients = document.querySelectorAll('.recipe-ingredient');
+            let total = 0;
+
+            recipeIngredients.forEach(select => {
+                const quantity = parseFloat(select.parentElement.querySelector('.recipe-quantity').value) || 0;
+                const ingredient = ingredients.find(ing => ing.name === select.value);
+                if (ingredient) {
+                    total += ingredient.pricePerUnit * quantity;
+                }
+            });
+
+            document.getElementById('totalCost').textContent = total.toFixed(2);
+        }
+
+        // Add event listener to calculate total when any input changes
+        document.getElementById('recipeIngredients').addEventListener('input', calculateTotal);
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
